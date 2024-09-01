@@ -50,7 +50,7 @@ def todolist(filter: str | None = "all"):
     return [{"id": item[0], "task": item[1], "status": item[2]} for item in items]
 
 @app.post("/todolist")
-def add_todo_item(item: TodoItem):
+def add_item(item: TodoItem):
     cur, cur = get_db_cursor()
     try:
         with closing(cur):
@@ -61,7 +61,7 @@ def add_todo_item(item: TodoItem):
     return {"message": "Todo item added successfully"}
 
 @app.put("/todolist/{item_id}")
-def update_todo_item(item_id: int, item: TodoItem):
+def update_item(item_id: int, item: TodoItem):
     cur, cur = get_db_cursor()
     try:
         with closing(cur):
@@ -74,7 +74,8 @@ def update_todo_item(item_id: int, item: TodoItem):
     return {"message": "Todo item updated successfully"}
 
 @app.delete("/todolist/{item_id}")
-def delete_todo_item(item_id: int):
+
+def delete_item(item_id: int):
     cur, cur = get_db_cursor()
     try:
         with closing(cur):
