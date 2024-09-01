@@ -1,9 +1,10 @@
 import sqlite3
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
+from fastapi.exceptions import HTTPException
 from pydantic import BaseModel
 
 
-app = fastapi.FastAPI()
+app = FastAPI()
 
 def init_db():
     with sqlite3.connect('todolist.db') as conn:
