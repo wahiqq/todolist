@@ -46,6 +46,19 @@ def todolist(filter: str | None = "all"):
     return [{"id": item[0], "task": item[1], "done": item[2]} for item in items]
 
 
+def get_item_by_id(id: int):
+    cur, cur = get_db_cursor()
+    cur.execute("SELECT * FROM todolist WHERE id = ?", (id,))
+    item = cur.fetchone()
+    cur.close()
+    if item is None:
+        raise HTTPException(status_code=404, detail="Not found")
+    return {"id": item[0], "task": item[1], "done": item[2]}
+
+@app.get("/todolist/{id}")
+def get_item(id: int):
+    return get_item_by_id(id)
+
 
 class TodoItem(BaseModel):
     text: str
