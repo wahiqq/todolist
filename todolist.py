@@ -10,8 +10,8 @@ class TodoItem(BaseModel):
     status: str
 
 def init_db():
-    with sqlite3.connect('todolist.db') as cur:
-        cur = cur.cursor()
+    with sqlite3.connect('todolist.db') as conn:
+        cur = conn.cursor()
         cur.execute('''
             CREATE TABLE IF NOT EXISTS todolist (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -19,18 +19,18 @@ def init_db():
                 status TEXT NOT NULL CHECK(status IN ('complete', 'pending'))
             )
         ''')
-        cur.commit()
+        conn.commit()
 
 init_db()
 
 def get_db_cursor():
-    cur = sqlite3.connect('todolist.db')
-    return cur.cursor(), cur
+    conn = sqlite3.connect('todolist.db')
+    return conn.cursor(), conn
 
 def fetch_items(filter: str):
-    cur = sqlite3.connect('todolist.db')
+    conn = sqlite3.connect('todolist.db')
     try:
-        with closing(cur.cursor()) as cur:
+        with closing(conn.cursor()) as cur:
             if filter == "completed":
                 cur.execute("SELECT * FROM todolist WHERE status = ?", ("complete",))
             elif filter == "pending":
@@ -43,7 +43,7 @@ def fetch_items(filter: str):
     except sqlite3.Error as e:
         raise HTTPException(status_code=500, detail="Database error")
     finally:
-        cur.close()
+        conn.close()
     return items
 
 @app.get("/todolist")
@@ -52,41 +52,45 @@ def todolist(filter: str = "all"):
         raise HTTPException(status_code=400, detail="Invalid filter name")
     return fetch_items(filter)
 
-
 @app.post("/todolist")
 def add_item(item: TodoItem):
-    cur, cur = get_db_cursor()
+    cur, conn = get_db_cursor()
     try:
         with closing(cur):
             cur.execute("INSERT INTO todolist (task, status) VALUES (:task, :status)", {"task": item.task, "status": item.status})
-            cur.commit()
+            conn.commit()
+    except sqlite3.Error as e:
+        raise HTTPException(status_code=500, detail="Database error")
     finally:
-        cur.close()
+        conn.close()
     return {"message": "Todo item added successfully"}
 
 @app.put("/todolist/{item_id}")
 def update_item(item_id: int, item: TodoItem):
-    cur, cur = get_db_cursor()
+    cur, conn = get_db_cursor()
     try:
         with closing(cur):
             cur.execute("UPDATE todolist SET task = :task, status = :status WHERE id = :id", {"task": item.task, "status": item.status, "id": item_id})
             if cur.rowcount == 0:
                 raise HTTPException(status_code=404, detail="Todo item not found")
-            cur.commit()
+            conn.commit()
+    except sqlite3.Error as e:
+        raise HTTPException(status_code=500, detail="Database error")
     finally:
-        cur.close()
+        conn.close()
     return {"message": "Todo item updated successfully"}
 
 @app.delete("/todolist/{item_id}")
-
 def delete_item(item_id: int):
-    cur, cur = get_db_cursor()
+    cur, conn = get_db_cursor()
     try:
         with closing(cur):
             cur.execute("DELETE FROM todolist WHERE id = :id", {"id": item_id})
             if cur.rowcount == 0:
                 raise HTTPException(status_code=404, detail="Todo item not found")
-            cur.commit()
+            conn.commit()
+    except sqlite3.Error as e:
+        raise HTTPException(status_code=500, detail="Database error")
     finally:
-        cur.close()
+        conn.close()
     return {"message": "Todo item deleted successfully"}
