@@ -1,5 +1,6 @@
 # Assignment Questions Answers
-
+Most of the questions were answered in class but I still tried to answer them here.
+Resources Used: SQLite3 Documentation, COMP350 Notes, GitHub CP
 Question 1
 
 What happens to the application on "cold start" (i.e. when you start it with no database, tables or data in the tables).
