@@ -6,10 +6,17 @@ from pydantic import BaseModel
 
 app = fastapi.FastAPI()
 
-g_todolist = [
-    {"id": 1, "text": "Something to do", "done": True},
-    {"id": 2, "text": "Something else to do later", "done": False},
-]
+def init_db():
+    with sqlite3.connect('todolist.db') as conn:
+        cur = conn.cursor()
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS todolist (
+                id integer primary key autoincrement,
+                task text not null,
+                done boolean not null
+            )
+        ''')
+        cur.commit()
 
 
 @app.get("/todolist")
