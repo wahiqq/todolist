@@ -26,7 +26,7 @@ def get_db_cursor():
 
 
 def fetch_items(filter: str):
-    cur, cur = get_db_cursor()
+    cur, _ = get_db_cursor()
     if filter == "completed":
         cur.execute("SELECT * FROM todolist WHERE done = 1")
     elif filter == "pending":
@@ -47,7 +47,7 @@ def todolist(filter: str | None = "all"):
 
 
 def get_item_by_id(id: int):
-    cur, cur = get_db_cursor()
+    cur, _ = get_db_cursor()
     cur.execute("SELECT * FROM todolist WHERE id = ?", (id,))
     item = cur.fetchone()
     cur.close()
@@ -80,13 +80,14 @@ def add_item(item: TodoItem):
 
 @app.put("/todolist/{id}")
 def mod_item(id: int, mods: ItemMods):
-    cur, cur = get_db_cursor()
+    conn = sqlite3.connect('todolist.db')
+    cursor = conn.cursor()
     if mods.text is not None:
-        cur.execute("UPDATE todolist SET task = ? WHERE id = ?", (mods.text, id))
+        cursor.execute("UPDATE todolist SET task = ? WHERE id = ?", (mods.text, id))
     if mods.done is not None:
-        cur.execute("UPDATE todolist SET done = ? WHERE id = ?", (mods.done, id))
-    cur.commit()
-    cur.close()
+        cursor.execute("UPDATE todolist SET done = ? WHERE id = ?", (mods.done, id))
+    conn.commit()
+    conn.close()
     return {"status": "success"}
 
 @app.delete("/todolist/{id}")
