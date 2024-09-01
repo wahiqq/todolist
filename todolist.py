@@ -63,40 +63,36 @@ def get_item(id: int):
 class TodoItem(BaseModel):
     text: str
 
-
-def success(**kwargs):
-    return {"status": "success", **kwargs}
-
-
-@app.post("/todolist")
-def new_item(item: TodoItem):
-    maxid = max([item["id"] for item in g_todolist])
-    newid = maxid + 1
-    g_todolist.append({"id": newid, "text": item.text, "done": False})
-    return success(url=f"/todolist/{newid}")
-
-
 class ItemMods(BaseModel):
-    """
-    User may want to change either the text,
-    or the "done" status of an item, or both.
-    """
-
     text: str | None = None
     done: bool | None = None
 
 
+
+@app.post("/todolist")
+def add_item(item: TodoItem):
+    cur, cur = get_db_cursor()
+    cur.execute("INSERT INTO todolist (task, done) VALUES (?, ?)", (item.text, False))
+    cur.commit()
+    newid = cur.lastrowid
+    cur.close()
+    return {"url": f"/todolist/{newid}"}
+
 @app.put("/todolist/{id}")
 def mod_item(id: int, mods: ItemMods):
-    item = get_item_by_id(id)
-    if mods.text != None:
-        item["text"] = mods.text
-    if mods.done != None:
-        item["done"] = mods.done
-    return success()
-
+    cur, cur = get_db_cursor()
+    if mods.text is not None:
+        cur.execute("UPDATE todolist SET task = ? WHERE id = ?", (mods.text, id))
+    if mods.done is not None:
+        cur.execute("UPDATE todolist SET done = ? WHERE id = ?", (mods.done, id))
+    cur.commit()
+    cur.close()
+    return {"status": "success"}
 
 @app.delete("/todolist/{id}")
 def del_item(id: int):
-    g_todolist.remove(get_item_by_id(id))
-    return success()
+    cur, cur = get_db_cursor()
+    cur.execute("DELETE FROM todolist WHERE id = ?", (id,))
+    cur.commit()
+    cur.close()
+    return {"status": "success"}
