@@ -28,26 +28,30 @@ def get_db_cursor():
     return cur.cursor(), cur
 
 def fetch_items(filter: str):
-    cur, cur = get_db_cursor()
+    cur = sqlite3.connect('todolist.db')
     try:
-        with closing(cur):
+        with closing(cur.cursor()) as cur:
             if filter == "completed":
-                cur.execute("SELECT * FROM todolist WHERE status = :status", {"status": "complete"})
+                cur.execute("SELECT * FROM todolist WHERE status = ?", ("complete",))
             elif filter == "pending":
-                cur.execute("SELECT * FROM todolist WHERE status = :status", {"status": "pending"})
+                cur.execute("SELECT * FROM todolist WHERE status = ?", ("pending",))
             elif filter == "all":
                 cur.execute("SELECT * FROM todolist")
             else:
                 raise HTTPException(status_code=400, detail="Invalid filter name")
             items = cur.fetchall()
+    except sqlite3.Error as e:
+        raise HTTPException(status_code=500, detail="Database error")
     finally:
         cur.close()
     return items
 
 @app.get("/todolist")
-def todolist(filter: str | None = "all"):
-    items = fetch_items(filter)
-    return [{"id": item[0], "task": item[1], "status": item[2]} for item in items]
+def todolist(filter: str = "all"):
+    if filter not in ["completed", "pending", "all"]:
+        raise HTTPException(status_code=400, detail="Invalid filter name")
+    return fetch_items(filter)
+
 
 @app.post("/todolist")
 def add_item(item: TodoItem):
